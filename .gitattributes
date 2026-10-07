@@ -1,0 +1,21 @@
+# 统一换行符：文本文件入库一律用 LF，避免 Windows / macOS 组员互相改乱整份文件
+* text=auto eol=lf
+
+# 明确声明为二进制，禁止任何换行符转换
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.pdf  binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+*.zip  binary
+
+# GitHub 语言统计：把数据/文档排除在代码统计之外
+*.json   linguist-detectable=false
+*.csv    linguist-detectable=false
+*.xml    linguist-detectable=false
+*.htm    linguist-detectable=false
+*.html   linguist-detectable=false
+*.md     linguist-documentation

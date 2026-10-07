@@ -1,0 +1,101 @@
+{
+  "target_question": "Anthropic 是否会在 2026-12-15（含）之前正式 IPO 并开始交易？",
+  "target_date": "2026-12-15",
+  "generated_utc": "2026-10-07T09:26:33+00:00",
+  "market": {
+    "polymarket_event": "anthropic-ipo-by / december-15-2026",
+    "yes_price": 0.785,
+    "kalshi_cross_check": {
+      "anthropic_ipo_first_yes": 0.95,
+      "openai_ipo_first_yes": 0.03
+    }
+  },
+  "model": {
+    "kind": "milestone_gated_monte_carlo",
+    "calibrated_params": {
+      "investor_day": "2026-10-14",
+      "gap_calendar_days": [
+        16.0,
+        24.0,
+        40.0
+      ],
+      "roadshow_calendar_days": [
+        8.0,
+        12.0,
+        19.0
+      ],
+      "listing_lag_calendar_days": [
+        1.0,
+        1.0,
+        3.0
+      ],
+      "slip_share": 0.0,
+      "slip_calendar_days": [
+        14.0,
+        28.0,
+        45.0
+      ],
+      "stall_prob": 0.19
+    },
+    "fit_loss_weighted": 8.28,
+    "p_by_target": 0.8096,
+    "p_before_thanksgiving": 0.4672,
+    "median_listing_date": "2026-11-24",
+    "listing_date_quantiles": {
+      "p5": "2026-11-16",
+      "p10": "2026-11-18",
+      "p25": "2026-11-23",
+      "p50": "2026-11-24",
+      "p75": "2026-11-30",
+      "p90": "2026-12-02",
+      "p95": "2026-12-04"
+    }
+  },
+  "market_implied_median_listing_date": {
+    "p25": "2026-11-19",
+    "p25_exact": "2026-11-16+3.13d",
+    "p50": "2026-11-26",
+    "p50_exact": "2026-11-16+9.65d",
+    "p75": "2026-12-09",
+    "p75_exact": "2026-12-01+8.44d"
+  },
+  "scenarios": {
+    "A_conditional_after_thanksgiving": {
+      "question": "若感恩节（11/26）前仍未能挂牌，则 12/15 前完成挂牌的概率？",
+      "market_implied": 0.5582,
+      "model": 0.6427,
+      "note": "市场隐含值用分段线性插值在 11/26 处取值，见 market_cdf_fn 的说明。"
+    },
+    "B_roadshow_delayed": {
+      "roadshow_delay_1w": {
+        "p_by_2026_12_15": 0.8063,
+        "median_listing_date": "2026-12-01"
+      },
+      "roadshow_delay_2w": {
+        "p_by_2026_12_15": 0.7323,
+        "median_listing_date": "2026-12-08"
+      }
+    },
+    "market_implied_p_by_thanksgiving": 0.5133,
+    "model_p_by_thanksgiving": 0.4672
+  },
+  "blend_logodds_by_model_weight": {
+    "0.0": 0.785,
+    "0.25": 0.7914,
+    "0.35": 0.7939,
+    "0.5": 0.7976,
+    "0.65": 0.8012,
+    "1.0": 0.8096
+  },
+  "final": {
+    "model_weight": 0.35,
+    "p_final": 0.7939,
+    "p_final_pct": 79.4,
+    "band_80pct": [
+      0.7825,
+      0.8142
+    ],
+    "call": "Yes（倾向于 Anthropic 会在 2026-12-15 前完成 IPO）",
+    "edge_vs_market_pp": 0.89
+  }
+}

@@ -1,0 +1,37 @@
+EVENT: Anthropic IPO by __? | slug=anthropic-ipo-by | volume=4469543.362222 | liquidity=143409.24862 | end=2027-01-01T04:59:00Z | closed=False
+  description: This market will resolve to "Yes" if Anthropic shares are listed on a public securities exchange and open for trading by 11:59 PM ET on the listed date. Otherwise, this market will resolve to "No."
+
+If Anthropic is acquired by another company that is already public, this market will immediately resolve to "No."
+
+The primary resolution source for this market is official filings and announcements from Anthropic and the relevant securities exchange on which the shares are listed, including SEC filings (e.g., Form S-1, Form 8-A), exchange listing confirmations, and official press releases from Anthropic; however a consensus of credible reporting may also be used. 
+  tags: ['Finance', 'IPO', 'Anthropic IPO', 'Anthropic', 'IPOs', 'Dario']
+  - MARKET Will Anthropic IPO by June 30, 2026?
+    groupItemTitle=June 30, 2026  outcomes=["Yes", "No"]  prices=["0", "1"]  bestBid=None bestAsk=0.001 lastTrade=0.001
+    volume=32230.993123000022 liquidity=0 spread=0.001 endDate=2026-07-01T03:59:00Z closed=True active=True acceptingOrders=False
+  - MARKET Will Anthropic IPO by July 31, 2026?
+    groupItemTitle=July 31, 2026  outcomes=["Yes", "No"]  prices=["0", "1"]  bestBid=None bestAsk=0.001 lastTrade=0.001
+    volume=75771.96042100003 liquidity=0 spread=0.001 endDate=2026-08-01T03:59:00Z closed=True active=True acceptingOrders=False
+  - MARKET Will Anthropic IPO by September 30, 2026?
+    groupItemTitle=September 30, 2026  outcomes=["Yes", "No"]  prices=["0", "1"]  bestBid=None bestAsk=0.001 lastTrade=0.001
+    volume=1103612.160755 liquidity=None spread=0.001 endDate=2026-10-01T03:59:00Z closed=True active=True acceptingOrders=False
+  - MARKET Will Anthropic IPO by December 31, 2026?
+    groupItemTitle=December 31, 2026  outcomes=["Yes", "No"]  prices=["0.825", "0.175"]  bestBid=0.82 bestAsk=0.83 lastTrade=0.82
+    volume=1040201.612999 liquidity=31392.4713 spread=0.01 endDate=2027-01-01T04:59:00Z closed=False active=True acceptingOrders=True
+  - MARKET Will Anthropic IPO by October 31, 2026?
+    groupItemTitle=October 31, 2026  outcomes=["Yes", "No"]  prices=["0.013", "0.987"]  bestBid=0.011 bestAsk=0.015 lastTrade=0.012
+    volume=1155060.292826 liquidity=38822.3066 spread=0.004 endDate=2026-11-01T03:59:00Z closed=False active=True acceptingOrders=True
+  - MARKET Will Anthropic IPO by September 15, 2026?
+    groupItemTitle=September 15, 2026  outcomes=["Yes", "No"]  prices=["0", "1"]  bestBid=None bestAsk=0.001 lastTrade=0.001
+    volume=325159.9918419999 liquidity=None spread=0.001 endDate=2026-09-16T03:59:00Z closed=True active=True acceptingOrders=False
+  - MARKET Will Anthropic IPO by October 15, 2026?
+    groupItemTitle=October 15, 2026  outcomes=["Yes", "No"]  prices=["0.0005", "0.9995"]  bestBid=None bestAsk=0.001 lastTrade=0.001
+    volume=236399.95901199998 liquidity=28835.83782 spread=0.001 endDate=2026-10-16T03:59:00Z closed=False active=True acceptingOrders=True
+  - MARKET Will Anthropic IPO by November 30, 2026?
+    groupItemTitle=November 30, 2026  outcomes=["Yes", "No"]  prices=["0.705", "0.295"]  bestBid=0.69 bestAsk=0.72 lastTrade=0.69
+    volume=242319.25682700006 liquidity=12016.0326 spread=0.03 endDate=2026-12-01T04:59:00Z closed=False active=True acceptingOrders=True
+  - MARKET Will Anthropic IPO by November 15, 2026?
+    groupItemTitle=November 15, 2026  outcomes=["Yes", "No"]  prices=["0.13", "0.87"]  bestBid=0.12 bestAsk=0.14 lastTrade=0.12
+    volume=117681.92225000002 liquidity=9905.5172 spread=0.02 endDate=2026-11-16T04:59:00Z closed=False active=True acceptingOrders=True
+  - MARKET Will Anthropic IPO by December 15, 2026?
+    groupItemTitle=December 15, 2026  outcomes=["Yes", "No"]  prices=["0.785", "0.215"]  bestBid=0.78 bestAsk=0.79 lastTrade=0.79
+    volume=141105.21216700005 liquidity=24114.1047 spread=0.01 endDate=2026-12-16T04:59:00Z closed=False active=True acceptingOrders=True

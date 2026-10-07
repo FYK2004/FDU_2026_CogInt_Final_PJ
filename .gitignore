@@ -1,0 +1,28 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# ---- Office 临时/锁文件 ----
+~$*.docx
+~$*.xlsx
+~$*.pptx
+*.tmp
+
+# ---- 浏览器/搜索页临时转储（非分析输入，可随时重抓）----
+data/raw/bing_*.html
+data/raw/ddg_search.html
+data/raw/poly_page_*.html
+data/raw/poly_search_page.html
+data/raw/gamma_test.json
+_extract.txt
+_poly_search_anthropic.json
+jina_*.txt
+
+# ---- 系统 ----
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,36 @@
+{
+  "generated_utc": "2026-10-07T09:19:23+00:00",
+  "paths": 200000,
+  "seed": 20261007,
+  "assumptions": {
+    "investor_day": "2026-10-14",
+    "gap_investor_day_to_roadshow": [
+      16,
+      26,
+      55
+    ],
+    "roadshow_len": [
+      8,
+      12,
+      18
+    ],
+    "listing_lag": [
+      1,
+      1,
+      3
+    ],
+    "stall_prob": 0.12
+  },
+  "listing_date_quantiles": {
+    "p5": "2026-11-17",
+    "p10": "2026-11-20",
+    "p25": "2026-11-24",
+    "p50": "2026-11-30",
+    "p75": "2026-12-10",
+    "p90": "2027-06-30",
+    "p95": "2027-06-30"
+  },
+  "p_list_before_thanksgiving_2026_11_26": 0.3188,
+  "model_p_by_2026_12_15": 0.849,
+  "market_p_by_2026_12_15": 0.785
+}
