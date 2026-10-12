@@ -14,6 +14,15 @@ log-odds 融合（模型权重 0.35）后 **最终预测 79.4%（80% 区间 78.3
 edge +0.89pp。核心增量不是点位，而是市场无法提供的**条件概率**：
 若感恩节前未挂牌，则 12/15 前挂牌的条件概率为 **模型 64.3% vs 市场 55.8%**。
 
+## 项目流程
+
+![项目整体流程：数据采集 → 处理 → 建模校准 → 结果输出](figures/fig0_pipeline.png)
+
+**① 数据采集**（Polymarket / Kalshi / 新闻正文）→ **② 数据处理**（期限结构、
+宽表历史、跳变检测）→ **③ 建模与校准**（门控蒙特卡洛 + 三阶段网格校准 +
+与市场 log-odds 融合）→ **④ 结果输出**（`forecast.json`、fig1–fig6、期末报告）。
+底部三个判决点过后刷新数据并重跑模型，即可更新预测。
+
 ## 目录结构
 
 ```
@@ -21,7 +30,7 @@ edge +0.89pp。核心增量不是点位，而是市场无法提供的**条件概
 │   ├── 项目初步方案.md            # 期中展示用：设计思想 / 算法框架 / 数据采集 / 进展
 │   ├── 项目报告.md                # 期末报告源文件（Markdown）
 │   └── 第XX小组-项目期末报告.docx   # 由 md 渲染的提交版（需改名替换 XX）
-├── figures/                     # fig1–fig6，报告附录用图
+├── figures/                     # fig0 流程示意图 + fig1–fig6 结果图
 ├── scripts/                     # 全部源代码
 ├── data/
 │   ├── raw/                     # 原始抓取数据（Polymarket / Kalshi / 新闻正文）
@@ -38,6 +47,7 @@ python scripts/analyze_term_structure.py
 python scripts/milestone_model.py         # 未校准基线
 python scripts/calibrate_model.py         # 三阶段校准 + 融合 + 情景分析
 python scripts/make_figures.py            # 生成 figures/fig1–fig6
+python scripts/make_pipeline_figure.py    # 生成 figures/fig0_pipeline.png 流程示意图
 
 # 重新渲染 Word 报告（需要 python-docx）
 python scripts/build_report_docx.py
@@ -61,6 +71,7 @@ python scripts/collect_news.py
 | `milestone_model.py` | 未校准基线模型 |
 | `calibrate_model.py` | 三阶段网格校准 + 市场融合 + 情景分析 + 敏感性曲面 |
 | `make_figures.py` | 生成报告用图 |
+| `make_pipeline_figure.py` | 生成整体流程示意图 fig0（供 README / 报告使用） |
 | `build_report_docx.py` | Markdown 报告 → Word 提交版 |
 
 ## 组员协作
