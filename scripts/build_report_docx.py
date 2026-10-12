@@ -5,6 +5,10 @@ A4、页边距 2.3/2.5cm、正文 10.5pt、行距 1.15、段后 4pt；图统一 
 
 用法（需要 python-docx）：
     python scripts/build_report_docx.py
+    python scripts/build_report_docx.py docs/项目原理说明.md docs/项目原理说明.docx
+
+不传参数时渲染期末报告；传入源文件 / 输出文件即可用同一套版式渲染其他 Markdown
+（例如分步原理说明），保证「单一来源、两种形态」且版式一致。
 """
 
 from __future__ import annotations
@@ -196,6 +200,12 @@ def is_sep(line):
 
 
 def main():
+    global SRC, OUT
+    if len(sys.argv) >= 2:
+        SRC = sys.argv[1] if os.path.isabs(sys.argv[1]) else os.path.join(ROOT, sys.argv[1])
+    if len(sys.argv) >= 3:
+        OUT = sys.argv[2] if os.path.isabs(sys.argv[2]) else os.path.join(ROOT, sys.argv[2])
+
     with open(SRC, encoding="utf-8") as fh:
         lines = fh.read().splitlines()
 

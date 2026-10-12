@@ -82,7 +82,11 @@ def _snap_to_monday(offsets: np.ndarray, investor_day: dt.date) -> np.ndarray:
 
 def _adjust_offsets(offsets: np.ndarray, investor_day: dt.date,
                     thanksgiving: dt.date) -> np.ndarray:
-    """把挂牌日推到工作日，并避开感恩节当天。"""
+    """把挂牌日推到周一（与路演启动同一规则），并避开感恩节当天。
+
+    与 ``_snap_to_monday`` 说明一致：大额 IPO 首日通常安排在周一，因此这里
+    用的是比「工作日」更强的约束，属于偏保守的设定。
+    """
     off = _snap_to_monday(offsets, investor_day)
     tg = (thanksgiving - investor_day).days
     off = np.where(off == tg, tg + 1, off)
