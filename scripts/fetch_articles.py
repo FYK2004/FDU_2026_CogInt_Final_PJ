@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import polymarket_client as pc  # noqa: E402
 
-RAW = "data/raw"
+from project_config import RAW, PROC, AS_OF, cutoff_utc
 ART = os.path.join(RAW, "articles")
 
 # (news_index title substring, short filename)
@@ -69,8 +69,10 @@ def resolve(link: str) -> str:
 
 
 def load_index() -> list[dict]:
-    with open("data/processed/news_index.csv", encoding="utf-8") as fh:
-        return list(csv.DictReader(fh))
+    import datetime as dt
+    with (PROC / "news_index.csv").open(encoding="utf-8") as fh:
+        return [r for r in csv.DictReader(fh) if r["published_utc"] and
+                dt.datetime.fromisoformat(r["published_utc"]) < cutoff_utc()]
 
 
 def main() -> None:

@@ -1,0 +1,157 @@
+"""Generate current numeric report from forecast.json, avoiding stale claims."""
+import csv
+import json
+from project_config import ROOT, PROC
+
+
+def main():
+    fc = json.loads((PROC/"forecast.json").read_text(encoding="utf-8"))
+    final, model, evidence = fc["final"], fc["model"], fc["evidence_model"]
+    lo, hi = final["sensitivity_range"]
+    with (PROC/"final_model_vs_market.csv").open(encoding="utf-8") as fh:
+        comparison = list(csv.DictReader(fh))
+    with (PROC/"bucket_implied.csv").open(encoding="utf-8") as fh:
+        buckets = list(csv.DictReader(fh))
+    compare_text = "\n".join(f"| {r['deadline']} | {float(r['market_prob']):.2%} | {float(r['model_prob']):.2%} | {r['role']} |" for r in comparison if r["closed"] == "False")
+    bucket_text = "\n".join(f"| {r['bucket']} | {float(r['market_prob']):.2%} | {float(r['model_prob']):.2%} |" for r in buckets)
+    a = fc["scenarios"]["A_conditional_after_thanksgiving"]
+    params = model["calibrated_params"]
+    evidence_note = ("10月14日证据核对：投资人说明会已举行；报道的Q3营收为168亿美元、环比约45%，\n"
+                     "并称调整后盈利。详情与来源权限见 docs/2026-10-14补录.md 及 data/updates/2026-10-14.json。") if fc.get("evidence_update") else "本信息日未记录经核实的新增说明会或财务证据。"
+    report = f'''# 第XX小组 项目期末报告
+
+## Anthropic 在2026年12月15日前完成IPO的概率预测
+
+课程：认知智能前沿技术与实践。选题类别：真实事件预测。
+信息截止：{fc['as_of']} 美东日终；执行时间：{fc['generated_utc']}。
+版本：v2。本文为脚本生成的当前报告，旧版完整保存在 data/archive/2026-10-07/。
+
+**摘要** 本项目预测 Anthropic 是否在2026年12月15日美东23:59前挂牌并开放交易。
+采用里程碑时间线蒙特卡洛模型，并将证据模型、市场报价和市场拟合诊断分别呈现。
+截至本次信息日，市场报价为 **{fc['market']['yes_price']:.1%}**，未校准证据模型为
+**{evidence['p_by_target']:.2%}**，最终意见池为 **{final['p_final']:.1%}，判定 {final['call']}**。
+指定假设组合下的敏感性范围为 **{lo:.1%}–{hi:.1%}**，没有80%覆盖率保证。
+这是一份事后补录的历史信息集分析，不能称为10月14日当天实时发布的预测。
+
+## 一 任务定义与证据截止
+
+Polymarket 事件为 anthropic-ipo-by，目标节点为 december-15-2026。原始市场规则要求
+股份在公开证券交易所挂牌并开放交易，公开递交S-1或定价均不等于本题完成。
+被已上市公司收购按No处理。交易日按美东自然日判断，不能把UTC endDate的次日日期
+直接拿来计算模型CDF。结算日口径由合约标签提取，原UTC时间单独保留。
+
+本次信息日的排他截止为 {fc['information_cutoff_utc_exclusive']}，因此包含美东14日晚间报道，
+对应北京时间已为15日。10月16日与26日之后的消息不参与本次补录。
+市场报价采自历史小时价格桶，目标节点最后桶时间为 {fc['market']['quote_utc']}。
+这是历史价格观测，不是当时买卖盘口的中点；当日成交量、价差和流动性均未补造。
+
+{evidence_note}
+调整后盈利不等于GAAP净利润为正。没有历史样本能估计这些消息对应的似然比，故
+不人为降低失败率，也不把说明会直接当成上市完成。
+
+## 二 模型与算法
+
+单条路径的潜在挂牌日为投资人说明日会日期加上：路演启动间隔、路演及簿记时长、
+挂牌滞后，以及可选的延期分支。各段采用三角分布，单位为日历日。
+所有参数是解释性流程假设，不声称已经通过历史IPO样本估计。
+
+证据模型采用 gap=(26,26,55)、roadshow=(8,12,18)、listing_lag=(1,1,3)、
+slip_share=0、stall_prob=0.12。gap下界26对应11月9日，这是报道支持的情景假设，
+并非不可推翻的公司承诺。路演和挂牌避开周末及交易所整日休市日；11月27日和12月24日
+虽提前收市，仍为交易日。引擎不强制周一上市。流产为吸收态，不绑定到未来某个挂牌日。
+
+模拟采用40万条路径、固定种子20261007。CDF为 P(T≤d)，分桶统一采用[lo,hi)，
+最后一桶包括2027年及以后和吸收态失败，因此概率总和为1。挂牌日期分位数以
+未进入失败吸收态为条件，不能与市场无条件分位数直接混用。
+
+市场期限结构先检查[0,1]边界与单调性。若有报价倒挂，用等权PAVA构造可用CDF，
+同时保留原价及调整幅度。危险率按生存概率计算：
+
+    h = -ln((1-F(t1))/(1-F(t0))) / (t1-t0)
+
+输出字段annualized_hazard_pct使用365天年化后乘100；这是一段区间的常数强度等价量，
+不是单独验证出的因果风险。日度历史保留实际最后观测点，不前向填充；缺测跨日变化
+不记为“单日跳变”，也不把所有价格跳变都认定为新闻的因果效应。
+
+## 三 市场拟合诊断与最终意见池
+
+市场拟合用于检验流程形状，最终预测的模型输入另取未校准证据模型，避免把同一报价
+先拟合再作为第二份独立证据融合。12月15日目标报价从参数搜索中留出，但邻近日期
+仍携带同一事件的信息，因此这只是目标节点留出诊断，不能冒充独立事件的样本外验证。
+
+搜索联合包含gap众数、gap上界、路演上界、延期占比和失败率。相同时间线只模拟一次，
+失败率通过独立混合 P(T≤d)=(1-stall)·P(T≤d|未流产) 计算。粗网格后细化邻域，
+最终损失用40万路径重算。参数不可识别：少数期限节点不能唯一确定多个流程参数。
+11月15日节点按预先声明权重0.25参与诊断，其余拟合节点11月30日、12月31日权重为1。
+不能因为模型不匹配就断言市场报价错误。
+
+本次拟合参数为 gap={tuple(params['gap'])}、roadshow={tuple(params['roadshow'])}、
+slip_share={params['slip_share']:.2f}、stall_prob={params['stall_prob']:.2f}。
+加权拟合损失为 {model['fit_loss_weighted']:.3f} pp²。这是对报价的拟合损失，不是预测准确率。
+
+最终预测采用显式意见池：
+
+    p_final = sigmoid(0.35*logit(p_evidence) + 0.65*logit(p_market))
+
+权重0.35为主观设计选择，尚未样本外校准。两个输入可能共享新闻，意见池不假定统计独立，
+也不解释成贝叶斯后验。基线抽样标准误约 {evidence['monte_carlo_standard_error']*100:.3f} 个百分点，
+它只表示模拟数值误差，远小于参数和结构的不确定性。
+
+## 四 实验结果
+
+| 节点 | 市场历史价格 | 市场拟合诊断 | 用途 |
+|---|---|---|---|
+{compare_text}
+
+证据模型的12月15日预测为 {evidence['p_by_target']:.2%}；市场拟合诊断为 {model['p_by_target']:.2%}。
+最终意见池为 **{final['p_final']:.2%}**，相对报价差 {final['edge_vs_market_pp']:+.2f} 个百分点。
+价差不代表经过验证的超额收益，项目不据此声称交易盈利能力。
+
+| 挂牌时间窗口 | 市场隐含 | 市场拟合诊断 |
+|---|---|---|
+{bucket_text}
+
+若感恩节之前未挂牌，则12月15日（含）前挂牌的条件概率：市场插值为
+{a['market_implied']:.1%}，市场拟合流程为 {a['model']:.1%}，证据模型为 {a['evidence_model']:.1%}。
+这一类条件概率可用(F(D)-F(t))/(1-F(t))从两个期限CDF节点计算；非报价日期需要插值或
+结构模型假设。线性插值没有证据支持为“上界”，因此只报告为一种假设。
+情景推迟的数值详见 forecast.json；它们是干预式时间线情景，不是已完成的在线贝叶斯更新。
+
+## 五 验证与局限
+
+针对日期边界、分桶总质量、失败吸收态、节假日、三角分布非法参数、CDF单调修复、
+危险率单位、缺测跳变、v2分页与时间过滤、时区和最终融合来源设置了回归测试。
+离线运行命令见README，原始历史响应、规范化历史和补录来源可追溯。
+
+当前仍缺少跨IPO历史训练集、独立事件测试集和经验证的融合权重。三角分布、阶段独立性、
+失败率先验以及11月9日的时程假设都可能失效。市场价格还可能受流动性、费用和风险偏好影响，
+不保证等于客观概率。年末窗口没有被硬设为零。本次敏感性范围只覆盖指定参数组合，
+无法概括所有模型风险。事件结算后可计算Brier分数与对数损失；单个事件不足以验证概率校准。
+
+## 六 小组分工与AI使用说明
+
+成员姓名与组号待小组填入；建议分工为数据与证据、模型与检验、报告与图表、展示与交付。
+本次使用Codex辅助代码审查、修复、历史资料检索、回归测试和说明整理。原始课程要求及
+既有方案由项目文件提供。小组需核对证据和假设，并在提交前补充实际成员工作及所用工具信息。
+
+## 参考资料与附件
+
+市场规则：data/raw/gamma_event_anthropic_ipo.json 内description。
+Polymarket官方v2接口：https://data-api.polymarket.com/v2/openapi.json。
+交易日历：https://www.nasdaqtrader.com/Trader.aspx?id=Calendar。
+新闻来源、发布时间和核实级别：data/updates/2026-10-14.json。
+
+![项目流程](figures/fig0_pipeline.png)
+![市场期限结构](figures/fig1_term_structure.png)
+![历史报价](figures/fig2_history.png)
+![证据模型与市场拟合诊断](figures/fig3_model_vs_market.png)
+![概率分桶](figures/fig4_buckets.png)
+![挂牌日期分布](figures/fig5_listing_distribution.png)
+![参数敏感性](figures/fig6_sensitivity.png)
+'''
+    (ROOT/"docs/项目报告.md").write_text(report, encoding="utf-8")
+    print("Wrote docs/项目报告.md")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,36 @@
+{
+  "as_of": "2026-10-14",
+  "information_day_timezone": "America/New_York",
+  "cutoff_utc_exclusive": "2026-10-15T04:00:00+00:00",
+  "recorded_on": "2026-10-27",
+  "status": "retrospective_backfill_not_a_timestamped_live_forecast",
+  "sources": [
+    {
+      "id": "reuters_investor_day_20261014",
+      "publisher": "Reuters via StreetInsider",
+      "title": "At Anthropic pre-IPO meet: Thinking caps, surging revenue, no human extinction",
+      "url": "https://www.streetinsider.com/Reuters/Anthropics%2BQ3%2Brevenue%2Bsurges%2B45%25%2Bto%2Bnearly%2B%2417%2Bbillion/27188096.html",
+      "published_utc": "2026-10-14T22:26:00+00:00",
+      "used_for_forecast": true,
+      "verification": "Read syndicated Reuters article and publication time; attendee interviews, not an official filing.",
+      "facts": ["投资人说明会已在旧金山举行，路透社采访了与会者。", "据与会者，Q3营收168亿美元，较Q2约116亿美元增长45%；调整后盈利。"]
+    },
+    {
+      "id": "bloomberg_q3_20261014",
+      "publisher": "Bloomberg",
+      "title": "Anthropic Revenue Jumps to $16.8 Billion in Quarter Before IPO",
+      "url": "https://bloomberg.com/news/articles/2026-10-14/anthropic-revenue-jumps-to-16-8-billion-in-quarter-before-ipo",
+      "published_utc": "2026-10-14T22:22:00+00:00",
+      "used_for_forecast": true,
+      "verification": "Public headline and timestamp only; full article not accessed."
+    }
+  ],
+  "model_update": {
+    "investor_day_status": "reported_held",
+    "anchor_date": "2026-10-14",
+    "earliest_roadshow_assumption": "2026-11-09",
+    "automatic_financial_to_probability_adjustment": false,
+    "reason": "财务消息没有可估计的似然比，保留失败率先验。11/09仍为报道支持的情景假设，并非公司保证。"
+  },
+  "exclusions": ["10/16的估值讨论和10/26的公开S-1不纳入10/14信息集。", "调整后盈利不等于GAAP净利润为正，说明会不等于IPO完成。", "按美东10/14日终补录，晚间消息在北京时间已是10/15。"]
+}

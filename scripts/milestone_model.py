@@ -2,7 +2,7 @@
 
 这是「凭公开证据直接设定参数、完全不看市场价格」的版本。它的作用是验证设计
 思想 —— 里程碑门控的蒙特卡洛能否复现市场期限结构上明显的 S 形 —— 并给出一个
-与市场互相独立的「第二意见」。校准与融合见 scripts/calibrate_model.py，
+不拟合报价的流程意见（与市场可能共享新闻）。校准与融合见 scripts/calibrate_model.py，
 核心引擎见 scripts/model_core.py。
 """
 
@@ -14,11 +14,10 @@ import json
 import os
 
 from model_core import THANKSGIVING, Params, simulate
+from project_config import PROC, AS_OF, SEED
 
-PROC = os.path.join("data", "processed")
 PARAMS = Params()          # 全部使用 model_core 中的先验默认值，不拟合市场
 N_PATHS = 400_000
-SEED = 20261007
 
 
 def main() -> None:
@@ -52,17 +51,19 @@ def main() -> None:
     summary = {
         "generated_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "kind": "uncalibrated_baseline",
+        "as_of": AS_OF.isoformat(),
         "paths": N_PATHS,
         "seed": SEED,
         "assumptions": {
             "investor_day": PARAMS.investor_day.isoformat(),
-            "gap_investor_day_to_roadshow": list(PARAMS.gap[1:]),
-            "roadshow_len": list(PARAMS.roadshow[1:]),
-            "listing_lag": list(PARAMS.listing_lag[1:]),
+            "gap_investor_day_to_roadshow": list(PARAMS.gap),
+            "roadshow_len": list(PARAMS.roadshow),
+            "listing_lag": list(PARAMS.listing_lag),
             "stall_prob": PARAMS.stall_prob,
         },
         "listing_date_quantiles": res.quantiles(),
-        "p_list_before_thanksgiving_2026_11_26": round(res.cdf(THANKSGIVING), 4),
+        "quantiles_conditioning": "conditional_on_no_absorbing_failure",
+        "p_list_before_thanksgiving_2026_11_26": round(res.cdf_before(THANKSGIVING), 4),
         "model_p_by_2026_12_15":
             next(r["model_prob"] for r in rows if "December 15" in r["deadline"]),
         "market_p_by_2026_12_15":

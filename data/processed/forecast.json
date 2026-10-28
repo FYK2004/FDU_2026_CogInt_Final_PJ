@@ -1,101 +1,202 @@
 {
-  "target_question": "Anthropic 是否会在 2026-12-15（含）之前正式 IPO 并开始交易？",
+  "schema_version": 2,
+  "as_of": "2026-10-14",
+  "information_cutoff_utc_exclusive": "2026-10-15T04:00:00+00:00",
+  "generated_utc": "2026-10-27T13:45:17+00:00",
+  "target_question": "Anthropic是否在2026-12-15美东时间23:59前挂牌并开放交易？",
   "target_date": "2026-12-15",
-  "generated_utc": "2026-10-07T09:26:33+00:00",
+  "provenance": {
+    "seed": 20261007,
+    "paths": 400000,
+    "term_structure_sha256": "6205c13e4340bb5a7cccfa1cbb068acced2d097f57900dd7e0f0d55b1dca1abc"
+  },
   "market": {
     "polymarket_event": "anthropic-ipo-by / december-15-2026",
-    "yes_price": 0.785,
-    "kalshi_cross_check": {
-      "anthropic_ipo_first_yes": 0.95,
-      "openai_ipo_first_yes": 0.03
-    }
+    "yes_price": 0.715,
+    "quote_utc": "2026-10-15T03:00:00+00:00",
+    "quote_source": "data_api_v2_hourly_history",
+    "historical_liquidity_available": false,
+    "kalshi_cross_check": null
   },
   "model": {
-    "kind": "milestone_gated_monte_carlo",
+    "kind": "market_calibrated_milestone_diagnostic",
     "calibrated_params": {
       "investor_day": "2026-10-14",
-      "gap_calendar_days": [
-        16.0,
-        24.0,
-        40.0
+      "thanksgiving": "2026-11-26",
+      "gap": [
+        26.0,
+        29.0,
+        33.0
       ],
-      "roadshow_calendar_days": [
+      "roadshow": [
         8.0,
         12.0,
         19.0
       ],
-      "listing_lag_calendar_days": [
+      "listing_lag": [
+        1.0,
+        1.0,
+        3.0
+      ],
+      "slip_share": 0.05,
+      "slip": [
+        14.0,
+        28.0,
+        45.0
+      ],
+      "stall_prob": 0.25,
+      "horizon": "2027-06-30",
+      "label": "market_calibrated_diagnostic"
+    },
+    "fit_targets": {
+      "November 15, 2026": 0.25,
+      "November 30, 2026": 1.0,
+      "December 31, 2026": 1.0
+    },
+    "held_out_target": "December 15, 2026",
+    "fit_loss_weighted": 7.798381625,
+    "p_by_target": 0.714265,
+    "p_before_thanksgiving": 0.2147725,
+    "median_listing_date": "2026-11-27",
+    "listing_date_quantiles": {
+      "p5": "2026-11-23",
+      "p10": "2026-11-24",
+      "p25": "2026-11-25",
+      "p50": "2026-11-27",
+      "p75": "2026-11-30",
+      "p90": "2026-12-03",
+      "p95": "2026-12-10"
+    },
+    "quantiles_conditioning": "conditional_on_no_absorbing_failure"
+  },
+  "evidence_model": {
+    "p_by_target": 0.81997,
+    "params": {
+      "investor_day": "2026-10-14",
+      "thanksgiving": "2026-11-26",
+      "gap": [
+        26.0,
+        26.0,
+        55.0
+      ],
+      "roadshow": [
+        8.0,
+        12.0,
+        18.0
+      ],
+      "listing_lag": [
         1.0,
         1.0,
         3.0
       ],
       "slip_share": 0.0,
-      "slip_calendar_days": [
+      "slip": [
         14.0,
         28.0,
         45.0
       ],
-      "stall_prob": 0.19
+      "stall_prob": 0.12,
+      "horizon": "2027-06-30",
+      "label": "baseline"
     },
-    "fit_loss_weighted": 8.28,
-    "p_by_target": 0.8096,
-    "p_before_thanksgiving": 0.4672,
-    "median_listing_date": "2026-11-24",
-    "listing_date_quantiles": {
-      "p5": "2026-11-16",
-      "p10": "2026-11-18",
-      "p25": "2026-11-23",
-      "p50": "2026-11-24",
-      "p75": "2026-11-30",
-      "p90": "2026-12-02",
-      "p95": "2026-12-04"
-    }
+    "monte_carlo_standard_error": 0.0006074932079867232,
+    "investor_day_status": "reported_held",
+    "note": "财务消息不自动映射为失败概率；参数为流程假设，尚无历史IPO样本估计。"
   },
   "market_implied_median_listing_date": {
-    "p25": "2026-11-19",
-    "p25_exact": "2026-11-16+3.13d",
-    "p50": "2026-11-26",
-    "p50_exact": "2026-11-16+9.65d",
-    "p75": "2026-12-09",
-    "p75_exact": "2026-12-01+8.44d"
+    "p25": "2026-11-20",
+    "p50": "2026-11-27",
+    "p75": null
   },
   "scenarios": {
     "A_conditional_after_thanksgiving": {
-      "question": "若感恩节（11/26）前仍未能挂牌，则 12/15 前完成挂牌的概率？",
-      "market_implied": 0.5582,
-      "model": 0.6427,
-      "note": "市场隐含值用分段线性插值在 11/26 处取值，见 market_cdf_fn 的说明。"
+      "question": "若11/26之前仍未挂牌，则12/15（含）前挂牌的条件概率？",
+      "market_implied": 0.5126816756910801,
+      "model": 0.6361118274640153,
+      "evidence_model": 0.7929678291119224,
+      "note": "市场值依赖线性插值；模型值依赖流程假设。相邻期限节点能推算同类条件概率。"
     },
+    "market_implied_p_by_thanksgiving": 0.41516666666666663,
+    "model_p_by_thanksgiving": 0.2147725,
     "B_roadshow_delayed": {
       "roadshow_delay_1w": {
-        "p_by_2026_12_15": 0.8063,
-        "median_listing_date": "2026-12-01"
+        "p_by_2026_12_15": 0.7120225,
+        "median_listing_date": "2026-12-04"
       },
       "roadshow_delay_2w": {
-        "p_by_2026_12_15": 0.7323,
-        "median_listing_date": "2026-12-08"
+        "p_by_2026_12_15": 0.634815,
+        "median_listing_date": "2026-12-14"
       }
-    },
-    "market_implied_p_by_thanksgiving": 0.5133,
-    "model_p_by_thanksgiving": 0.4672
+    }
   },
   "blend_logodds_by_model_weight": {
-    "0.0": 0.785,
-    "0.25": 0.7914,
-    "0.35": 0.7939,
-    "0.5": 0.7976,
-    "0.65": 0.8012,
-    "1.0": 0.8096
+    "0.0": 0.715,
+    "0.25": 0.7443840708007519,
+    "0.35": 0.7555649601853779,
+    "0.5": 0.7717058995789601,
+    "0.65": 0.7870813495460143,
+    "1.0": 0.81997
   },
   "final": {
+    "method": "heuristic_logodds_pool_of_uncalibrated_evidence_model_and_market",
     "model_weight": 0.35,
-    "p_final": 0.7939,
-    "p_final_pct": 79.4,
-    "band_80pct": [
-      0.7825,
-      0.8142
+    "p_final": 0.7555649601853779,
+    "p_final_pct": 75.6,
+    "sensitivity_range": [
+      0.681171735319224,
+      0.8282931507197905
     ],
-    "call": "Yes（倾向于 Anthropic 会在 2026-12-15 前完成 IPO）",
-    "edge_vs_market_pp": 0.89
-  }
+    "sensitivity_definition": "evidence stall .09/.12/.15 × gap_high 48/55/62 × slip 0/.1 × weight .25/.35/.5; no coverage guarantee",
+    "call": "Yes",
+    "edge_vs_market_pp": 4.056496018537792,
+    "independence_assumed": false
+  },
+  "evidence_update": {
+    "as_of": "2026-10-14",
+    "information_day_timezone": "America/New_York",
+    "cutoff_utc_exclusive": "2026-10-15T04:00:00+00:00",
+    "recorded_on": "2026-10-27",
+    "status": "retrospective_backfill_not_a_timestamped_live_forecast",
+    "sources": [
+      {
+        "id": "reuters_investor_day_20261014",
+        "publisher": "Reuters via StreetInsider",
+        "title": "At Anthropic pre-IPO meet: Thinking caps, surging revenue, no human extinction",
+        "url": "https://www.streetinsider.com/Reuters/Anthropics%2BQ3%2Brevenue%2Bsurges%2B45%25%2Bto%2Bnearly%2B%2417%2Bbillion/27188096.html",
+        "published_utc": "2026-10-14T22:26:00+00:00",
+        "used_for_forecast": true,
+        "verification": "Read syndicated Reuters article and publication time; attendee interviews, not an official filing.",
+        "facts": [
+          "投资人说明会已在旧金山举行，路透社采访了与会者。",
+          "据与会者，Q3营收168亿美元，较Q2约116亿美元增长45%；调整后盈利。"
+        ]
+      },
+      {
+        "id": "bloomberg_q3_20261014",
+        "publisher": "Bloomberg",
+        "title": "Anthropic Revenue Jumps to $16.8 Billion in Quarter Before IPO",
+        "url": "https://bloomberg.com/news/articles/2026-10-14/anthropic-revenue-jumps-to-16-8-billion-in-quarter-before-ipo",
+        "published_utc": "2026-10-14T22:22:00+00:00",
+        "used_for_forecast": true,
+        "verification": "Public headline and timestamp only; full article not accessed."
+      }
+    ],
+    "model_update": {
+      "investor_day_status": "reported_held",
+      "anchor_date": "2026-10-14",
+      "earliest_roadshow_assumption": "2026-11-09",
+      "automatic_financial_to_probability_adjustment": false,
+      "reason": "财务消息没有可估计的似然比，保留失败率先验。11/09仍为报道支持的情景假设，并非公司保证。"
+    },
+    "exclusions": [
+      "10/16的估值讨论和10/26的公开S-1不纳入10/14信息集。",
+      "调整后盈利不等于GAAP净利润为正，说明会不等于IPO完成。",
+      "按美东10/14日终补录，晚间消息在北京时间已是10/15。"
+    ]
+  },
+  "limitations": [
+    "意见池权重尚未做样本外验证；差值不代表可交易收益。",
+    "拟合损失不是预测准确率。",
+    "市场中位数为无条件分位数，模型日期分位数以未流产为条件，不能直接比较。"
+  ]
 }

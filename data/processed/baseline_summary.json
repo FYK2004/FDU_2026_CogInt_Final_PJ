@@ -1,34 +1,39 @@
 {
-  "generated_utc": "2026-10-07T09:24:36+00:00",
+  "generated_utc": "2026-10-27T13:45:15+00:00",
   "kind": "uncalibrated_baseline",
+  "as_of": "2026-10-14",
   "paths": 400000,
   "seed": 20261007,
   "assumptions": {
     "investor_day": "2026-10-14",
     "gap_investor_day_to_roadshow": [
       26.0,
+      26.0,
       55.0
     ],
     "roadshow_len": [
+      8.0,
       12.0,
       18.0
     ],
     "listing_lag": [
+      1.0,
       1.0,
       3.0
     ],
     "stall_prob": 0.12
   },
   "listing_date_quantiles": {
-    "p5": "2026-11-17",
-    "p10": "2026-11-20",
-    "p25": "2026-11-23",
-    "p50": "2026-11-30",
-    "p75": "2026-12-07",
+    "p5": "2026-11-23",
+    "p10": "2026-11-24",
+    "p25": "2026-11-30",
+    "p50": "2026-12-02",
+    "p75": "2026-12-08",
     "p90": "2026-12-14",
-    "p95": "2026-12-16"
+    "p95": "2026-12-17"
   },
-  "p_list_before_thanksgiving_2026_11_26": 0.3052,
-  "model_p_by_2026_12_15": 0.8467,
-  "market_p_by_2026_12_15": 0.785
+  "quantiles_conditioning": "conditional_on_no_absorbing_failure",
+  "p_list_before_thanksgiving_2026_11_26": 0.1304,
+  "model_p_by_2026_12_15": 0.82,
+  "market_p_by_2026_12_15": 0.715
 }

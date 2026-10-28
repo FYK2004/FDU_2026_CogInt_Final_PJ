@@ -1,7 +1,7 @@
 """Minimal Polymarket data client used by the Anthropic-IPO prediction project.
 
-Network access goes through the local HTTP proxy configured in PROXY.
-Every call is retried because the proxy is flaky for gamma-api.polymarket.com.
+Network uses system settings or the optional PJ_PROXY environment variable.
+Only transient failures are retried; HTTPS certificate verification is enabled.
 
 Public entry points
 -------------------
@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import os
 import ssl
 import sys
 import time
@@ -21,7 +22,7 @@ import urllib.parse
 import urllib.request
 import zlib
 
-PROXY = "http://127.0.0.1:7897"
+PROXY = os.environ.get("PJ_PROXY")
 GAMMA = "https://gamma-api.polymarket.com"
 CLOB = "https://clob.polymarket.com"
 
@@ -31,10 +32,8 @@ UA = (
 )
 
 _CTX = ssl.create_default_context()
-_CTX.check_hostname = False
-_CTX.verify_mode = ssl.CERT_NONE
 _OPENER = urllib.request.build_opener(
-    urllib.request.ProxyHandler({"http": PROXY, "https": PROXY}),
+    urllib.request.ProxyHandler({"http": PROXY, "https": PROXY}) if PROXY else urllib.request.ProxyHandler(),
     urllib.request.HTTPSHandler(context=_CTX),
 )
 
@@ -48,7 +47,7 @@ def _decode(raw: bytes, encoding: str | None) -> bytes:
     return raw
 
 
-def get_json(url: str, retries: int = 8, timeout: int = 40):
+def get_json(url: str, retries: int = 3, timeout: int = 20):
     last: Exception | None = None
     for attempt in range(1, retries + 1):
         try:
@@ -62,10 +61,17 @@ def get_json(url: str, retries: int = 8, timeout: int = 40):
             )
             with _OPENER.open(req, timeout=timeout) as resp:
                 return json.loads(_decode(resp.read(), resp.headers.get("Content-Encoding")))
-        except Exception as exc:  # noqa: BLE001 - proxy flakiness is expected
+        except urllib.error.HTTPError as exc:
+            if exc.code not in (429, 500, 502, 503, 504):
+                raise
+            last = exc
+            if attempt < retries:
+                time.sleep(min(float(exc.headers.get("Retry-After", attempt)), 10))
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
             last = exc
             print(f"    retry {attempt}/{retries} {url} :: {exc}", file=sys.stderr)
-            time.sleep(min(1.0 * attempt, 6.0))
+            if attempt < retries:
+                time.sleep(min(1.0 * attempt, 6.0))
     raise RuntimeError(f"giving up on {url}: {last}")
 
 
@@ -86,3 +92,31 @@ def yes_token(market: dict) -> str:
     tokens = json.loads(market["clobTokenIds"])
     outcomes = json.loads(market["outcomes"])
     return tokens[outcomes.index("Yes")]
+
+
+def get_history_v2(token_id, start, end, bucket_seconds=3600, raw_pages=None):
+    """Explicit epoch-second window, cursor pagination, normalized legacy points."""
+    if not 0 < start < end:
+        raise ValueError("require 0 < start < end")
+    query = dict(token_id=token_id, start=start, end=end,
+                 bucket_seconds=bucket_seconds, limit=10000)
+    points, cursors = {}, set()
+    while True:
+        payload = get_json("https://data-api.polymarket.com/v2/prices-history?" + urllib.parse.urlencode(query))
+        if raw_pages is not None:
+            raw_pages.append(payload)
+        for point in payload["data"]:
+            t, p = int(point["timestamp"]), float(point["price"])
+            # API buckets may floor start; reject everything outside [start,end).
+            if not 0 <= p <= 1:
+                raise ValueError("Invalid history price")
+            if start <= t < end:
+                points[t] = p
+        cursor = (payload.get("pagination") or {}).get("next_cursor")
+        if not cursor:
+            break
+        if cursor in cursors:
+            raise ValueError("Repeated history cursor")
+        cursors.add(cursor)
+        query["cursor"] = cursor
+    return [{"t": t, "p": p} for t, p in sorted(points.items())]

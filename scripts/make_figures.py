@@ -39,8 +39,8 @@ plt.rcParams.update(
     }
 )
 
-PROC = os.path.join("data", "processed")
-FIGS = "figures"
+from project_config import PROC, ROOT, AS_OF
+FIGS = str(ROOT / "figures")
 os.makedirs(FIGS, exist_ok=True)
 
 C_MKT = "#1f4e79"      # 市场
@@ -94,7 +94,7 @@ def fig_term_structure():
     ax.set_ylim(0, 1.0)
     ax.yaxis.set_major_formatter(pct)
     ax.set_ylabel("Yes 报价（隐含概率）")
-    ax.set_title("Polymarket「Anthropic 是否会在该日期前正式 IPO」期限结构（2026-10-07）")
+    ax.set_title(f"Polymarket「Anthropic 是否会在该日期前正式 IPO」期限结构（{AS_OF} 美东）")
     handles = [
         Line2D([], [], color=C_ACC, lw=6, label="本题标的节点 12/15"),
         Line2D([], [], color=C_MKT, lw=6, label="其他活跃节点"),
@@ -135,6 +135,7 @@ def fig_history():
         (dt.date(2026, 9, 19), "①", "① 9/19 WSJ：IPO 推迟至 11 月，全曲线重定价"),
         (dt.date(2026, 10, 1), "②", "② 10/1 Bloomberg：10/14 投资人说明日会、路演最快 11/9 当周启动"),
         (dt.date(2026, 10, 2), "③", "③ 10/2 11/15 节点由 0.230 跌至 0.115"),
+        (dt.date(2026, 10, 14), "④", "④ 10/14 Reuters：说明会已举行（晚间报道；不据此推断价格变化的因果）"),
     ]
     for day, mark, _ in events:
         ax.axvline(day, color="#888888", lw=0.9, ls=":")
@@ -144,7 +145,7 @@ def fig_history():
     ax.set_ylim(0, 1.0)
     ax.yaxis.set_major_formatter(pct)
     ax.set_ylabel("Yes 报价（隐含概率）")
-    ax.set_title("期限结构各节点的日度演化（2026-09-07 ~ 2026-10-07）")
+    ax.set_title(f"历史价格（UTC每日末次观测；末日未完结；截止美东 {AS_OF}）")
     ax.legend(fontsize=8.5, ncols=5, loc="upper center", bbox_to_anchor=(0.5, -0.13))
     ax.xaxis.set_major_locator(mdates.DayLocator(interval=3))
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%m-%d"))
@@ -164,7 +165,8 @@ def fig_cdf():
         d = [dt.datetime.fromisoformat(r["end_date"]) for r in rows]
         return d, [float(r["market_prob"]) for r in rows], [float(r["model_prob"]) for r in rows]
 
-    db, mb, pb = xy(live)
+    by_label = {r["deadline"]: r for r in base}
+    db, mb, pb = xy([by_label[r["deadline"]] for r in live])
     _, _, pc = xy([r for r in cal if r["closed"] == "False" and int(r["end_date"][:4]) == 2026])
 
     fig, ax = plt.subplots(figsize=(8.4, 4.0))
@@ -180,7 +182,7 @@ def fig_cdf():
     ax.set_ylim(0, 1.0)
     ax.yaxis.set_major_formatter(pct)
     ax.set_ylabel("P(在该日期前完成 IPO)")
-    ax.set_title("生存曲线：市场 vs 模型（校准把系统性偏慢修正掉）")
+    ax.set_title("累计挂牌概率：市场、证据模型与市场拟合诊断（12/15留出）")
     ax.legend(fontsize=8.5, loc="upper left")
     fig.autofmt_xdate(rotation=0)
     save(fig, "fig3_model_vs_market.png")
@@ -224,20 +226,21 @@ def fig_mc():
     ax.axvline(THANKSGIVING, color="#888888", lw=1.2, ls="--")
     ax.axvline(TARGET, color=C_ACC, lw=1.6, ls="-")
     med_model = dt.date.fromisoformat(fc["model"]["median_listing_date"])
-    med_mkt = dt.date.fromisoformat(fc["market_implied_median_listing_date"]["p50"])
+    med_mkt_text = fc["market_implied_median_listing_date"]["p50"]
+    med_mkt = dt.date.fromisoformat(med_mkt_text) if med_mkt_text else None
     ax.axvline(med_model, color=C_CAL, lw=1.2, ls=":")
-    ax.axvline(med_mkt, color=C_MKT, lw=1.2, ls=":")
+    if med_mkt:
+        ax.axvline(med_mkt, color=C_MKT, lw=1.2, ls=":")
     ax.set_ylim(0, probs.max() * 1.34)
-    ax.annotate("模型中位\n11/24", (med_model, probs.max() * 1.24), fontsize=8,
-                color=C_CAL, ha="right", va="top")
-    ax.annotate("市场中位\n11/26", (med_mkt, probs.max() * 1.24), fontsize=8,
-                color=C_MKT, ha="left", va="top")
+    ax.text(.02, .95, f"模型条件中位：{med_model:%m/%d}\n市场无条件中位：{med_mkt.strftime('%m/%d') if med_mkt else '未达到50%'}\n两者条件口径不同",
+            transform=ax.transAxes, fontsize=8, color="#444444", va="top")
     ax.annotate("本题结算日\n12/15", (TARGET, probs.max() * 1.24), fontsize=8.5,
                 color=C_ACC, ha="left", va="top")
     ax.set_ylabel("单日挂牌概率")
     ax.yaxis.set_major_formatter(pct)
-    ax.set_title("校准后模型的挂牌日分布（40 万条路径；另有 19% 的路径 2026 年内未挂牌，未在图中显示）")
-    ax.set_xlim(dt.date(2026, 11, 8), dt.date(2026, 12, 20))
+    stall = fc["model"]["calibrated_params"]["stall_prob"]
+    ax.set_title(f"市场拟合诊断的挂牌日分布（40万路径；失败概率参数 {stall:.0%}）")
+    ax.set_xlim(dt.date(2026, 11, 8), max(dates)+dt.timedelta(days=2))
     fig.autofmt_xdate(rotation=0)
     save(fig, "fig5_listing_distribution.png")
 
@@ -261,7 +264,7 @@ def fig_sensitivity():
     ax.scatter([stalls[j]], [highs[i]], marker="*", s=200, color="white",
                edgecolor="black", zorder=5)
     ax.annotate(
-        f"校准最优点\nstall_prob={stalls[j]:.2f}\ngap_high={int(highs[i])} 天",
+        f"切片网格最低点\nstall_prob={stalls[j]:.2f}\ngap_high={int(highs[i])} 天",
         (stalls[j], highs[i]), xytext=(10, 16), textcoords="offset points",
         fontsize=8.2, color="#111111",
     )

@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import gzip
 import io
+import os
 import ssl
 import sys
 import time
@@ -19,7 +20,7 @@ import urllib.error
 import urllib.request
 import zlib
 
-DEFAULT_PROXY = "http://127.0.0.1:7897"
+DEFAULT_PROXY = os.environ.get("PJ_PROXY")
 UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
@@ -31,8 +32,6 @@ def build_opener(proxy: str | None) -> urllib.request.OpenerDirector:
     if proxy:
         handlers.append(urllib.request.ProxyHandler({"http": proxy, "https": proxy}))
     ctx = ssl.create_default_context()
-    ctx.check_hostname = False
-    ctx.verify_mode = ssl.CERT_NONE
     handlers.append(urllib.request.HTTPSHandler(context=ctx))
     return urllib.request.build_opener(*handlers)
 

@@ -3,14 +3,14 @@
 运行（需要 matplotlib）：
     D:\\miniconda\\python.exe -X utf8 scripts\\make_pipeline_figure.py
 
-这张图只描述流程结构，不读取数据、不需要联网；
-其中引用的数字（84.67% / 80.96% / 79.4% 等）与 data/processed/forecast.json 一致，
-改模型后若数字变动，请同步更新本脚本里的 CARDS 文本。
+这张图读取forecast.json中的当前结论，不需要联网。
 """
 
 from __future__ import annotations
 
 import os
+import json
+from project_config import ROOT, PROC, AS_OF
 
 import matplotlib
 
@@ -28,7 +28,7 @@ plt.rcParams.update(
     }
 )
 
-FIGS = "figures"
+FIGS = str(ROOT / "figures")
 os.makedirs(FIGS, exist_ok=True)
 
 INK = "#2f2f2f"
@@ -49,10 +49,9 @@ CARDS = [
         (
             "collect_polymarket.py",
             [
-                "Gamma：事件 + 10 个子市场",
-                "CLOB：小时级 Yes 价历史",
-                "Kalshi：对照市场 1 个",
-                "→ data/raw/（history/gamma/clob）",
+                "Gamma元数据 + v2小时价格",
+                "按美东日期补采，保留原数据",
+                "→ data/raw/backfill/",
             ],
         ),
         (
@@ -60,15 +59,15 @@ CARDS = [
             [
                 "Google News RSS 多轮检索",
                 "→ news_*.xml（4 份）",
-                "→ news_index.csv（286 条）",
+                "→ news_index.csv（含补录）",
             ],
         ),
         (
             "fetch_articles.py",
             [
-                "抓取关键报道正文（15 篇留存）",
+                "核对报道、时间与证据口径",
                 "html_to_text.py：HTML → TXT",
-                "→ articles/ + _manifest.csv",
+                "→ articles/ + data/updates/",
             ],
         ),
     ],
@@ -108,14 +107,14 @@ CARDS = [
             "milestone_model.py",
             [
                 "未校准基线（只用公开报道参数）",
-                "→ 84.67%（中位挂牌 11/30）",
+                "用于最终意见池；不拟合报价",
             ],
         ),
         (
             "calibrate_model.py",
             [
-                "三阶段网格校准 → 80.96%",
-                "log-odds 融合（权重 0.35）",
+                "市场拟合仅作诊断，12/15留出",
+                "基线 + 市场意见池（0.35）",
                 "→ forecast.json",
             ],
         ),
@@ -124,22 +123,22 @@ CARDS = [
         (
             "最终预测",
             [
-                "79.4%（80% 区间 78.3–81.4%）",
-                "判定 Yes，edge +0.89pp",
+                "从 forecast.json 动态读取",
+                "敏感性范围不代表置信区间",
             ],
         ),
         (
             "核心增量：条件概率",
             [
                 "感恩节（11/26）前未挂牌 →",
-                "模型 64.3% vs 市场 55.8%",
+                "市场插值与模型情景分别计算",
             ],
         ),
         (
             "图表与报告",
             [
                 "make_figures.py → fig1–fig6",
-                "build_report_docx.py → 期末报告",
+                "docs/项目报告.md → 当前报告",
             ],
         ),
     ],
@@ -220,6 +219,11 @@ def stage_header(ax, x, y, w, h, label, color):
 
 
 def main() -> None:
+    with (PROC / "forecast.json").open(encoding="utf-8") as fh:
+        fc = json.load(fh)
+    lo, hi = fc["final"]["sensitivity_range"]
+    CARDS[3][0] = ("最终预测", [f"{fc['final']['p_final']:.1%}；敏感性 {lo:.1%}–{hi:.1%}",
+                                 f"判定 {fc['final']['call']}（权重未做样本外验证）"])
     fig, ax = plt.subplots(figsize=(13.2, 7.4))
     ax.set_xlim(0, 100)
     ax.set_ylim(0, 100)
@@ -233,7 +237,7 @@ def main() -> None:
     )
     ax.text(
         50, 95.4,
-        "数据截止 2026-10-07 ｜ 随机种子 20261007 ｜ 建模与出图全程离线可复现",
+        f"信息截止美东 {AS_OF} 日终 ｜ 随机种子 20261007 ｜ 历史补录，离线可复现",
         fontsize=8.6, color=MUTED, va="center", ha="center",
     )
 

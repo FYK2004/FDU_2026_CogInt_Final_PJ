@@ -14,9 +14,9 @@ import datetime as dt
 import glob
 import json
 import os
+import math
+from project_config import RAW, PROC, AS_OF, market_deadline, cutoff_utc
 
-RAW = "data/raw"
-PROC = "data/processed"
 
 # Strike order = chronological by resolution date.
 ORDER = [
@@ -38,7 +38,13 @@ def utc(ts: float) -> dt.datetime:
 
 
 def load_snapshot() -> dict[str, dict]:
-    with open(os.path.join(PROC, "anthopic_term_structure.csv"), encoding="utf-8") as fh:
+    path = RAW / "backfill" / AS_OF.isoformat() / "snapshot.csv"
+    if not path.exists():
+        if AS_OF != dt.date(2026, 10, 7):
+            raise FileNotFoundError(f"Missing dated snapshot: {path}; run backfill_market.py")
+        from project_config import ROOT
+        path = ROOT / "data/archive/2026-10-07/processed/anthopic_term_structure.csv"
+    with open(path, encoding="utf-8") as fh:
         return {r["slug"]: r for r in csv.DictReader(fh)}
 
 
@@ -49,42 +55,74 @@ def load_histories() -> dict[str, list[tuple[dt.datetime, float]]]:
         with open(path, encoding="utf-8") as fh:
             hist = json.load(fh)
         out[slug] = sorted((utc(pt["t"]), float(pt["p"])) for pt in hist)
-    return out
+    folder = RAW / "backfill" / AS_OF.isoformat()
+    for path in folder.glob("*.json"):
+        if path.name == "manifest.json":
+            continue
+        with path.open(encoding="utf-8") as fh:
+            points = json.load(fh)
+        merged = {t: p for t, p in out.get(path.stem, [])}
+        merged.update({utc(pt["t"]): float(pt["p"]) for pt in points})
+        out[path.stem] = sorted(merged.items())
+    return {slug: [(t, p) for t, p in series if t < cutoff_utc()]
+            for slug, series in out.items()}
+
+
+def isotonic_probabilities(values):
+    """Equal-weight PAVA; raw quotes remain available for auditing."""
+    blocks = []
+    for p in values:
+        if not math.isfinite(p) or not 0 <= p <= 1:
+            raise ValueError("Invalid market probability")
+        blocks.append([p, 1])
+        while len(blocks) > 1 and blocks[-2][0] > blocks[-1][0]:
+            b, a = blocks.pop(), blocks.pop()
+            count = a[1]+b[1]
+            blocks.append([(a[0]*a[1]+b[0]*b[1])/count, count])
+    return [p for p, count in blocks for _ in range(count)]
 
 
 def build_term_structure(snap: dict[str, dict], hist: dict[str, list]) -> list[dict]:
     rows = []
-    prev_p, prev_end = 1.0, None
+    ordered = [snap[s] for s in ORDER if s in snap]
+    adjusted = dict(zip([r["slug"] for r in ordered],
+                        isotonic_probabilities([float(r["yes_price"]) for r in ordered])))
+    prev_p, prev_end = 0.0, AS_OF
     for slug in ORDER:
         if slug not in snap:
             continue
         row = snap[slug]
-        p = float(row["yes_price"])
-        end = dt.datetime.fromisoformat(row["end_date"].replace("Z", "+00:00"))
-        # Hazard h = -ln(P(t_k)/P(t_{k-1})) / dt, i.e. the constant IPO intensity
+        p = adjusted[slug]
+        end = market_deadline(row)
+        # Hazard h = -ln((1-F(t_k))/(1-F(t_{k-1}))) / dt, annualized percent.
         # that would reconcile two adjacent points of the survival curve.
         hazard = ""
-        if prev_end is not None and prev_p > 0 and p < prev_p:
-            gap_days = (end - prev_end).total_seconds() / 86400
-            import math
-
-            hazard = round(-math.log(p / prev_p) / gap_days * 365, 4)
+        if end > prev_end and prev_p < 1 and p < 1:
+            gap_days = (end - prev_end).days
+            hazard = round(-math.log((1-p)/(1-prev_p))/gap_days*365*100, 4)
         rows.append(
             {
                 "deadline": row["deadline"],
                 "slug": slug,
-                "end_date": end.date().isoformat(),
+                "end_date": end.isoformat(),
+                "end_date_utc_metadata": row["end_date"],
+                "as_of": AS_OF.isoformat(),
+                "quote_utc": row.get("quote_utc", "2026-10-07T09:12:36+00:00"),
+                "quote_source": row.get("quote_source", "gamma_snapshot"),
+                "raw_yes_price": float(row["yes_price"]),
                 "yes_price": p,
+                "monotonic_adjustment_pp": round((p-float(row["yes_price"]))*100, 6),
                 "implied_prob_pct": round(p * 100, 2),
                 "annualized_hazard_pct": hazard,
-                "volume_usd": round(float(row["volume"] or 0), 2),
-                "liquidity_usd": round(float(row["liquidity"] or 0), 2),
+                "volume_usd": round(float(row["volume"]), 2) if row["volume"] else "",
+                "liquidity_usd": round(float(row["liquidity"]), 2) if row["liquidity"] else "",
                 "spread": row["spread"],
                 "closed": row["closed"],
                 "history_points": len(hist.get(slug, [])),
             }
         )
-        prev_p, prev_end = p, end
+        if end > AS_OF:
+            prev_p, prev_end = p, end
     return rows
 
 
@@ -114,6 +152,7 @@ def build_jumps(hist: dict[str, list], top: int = 8) -> list[dict]:
         moves = [
             (days[i], daily[days[i]] - daily[days[i - 1]], daily[days[i - 1]], daily[days[i]])
             for i in range(1, len(days))
+            if (dt.date.fromisoformat(days[i])-dt.date.fromisoformat(days[i-1])).days == 1
         ]
         for day, delta, a, b in sorted(moves, key=lambda m: -abs(m[1]))[:top]:
             out.append(
@@ -137,6 +176,7 @@ def write_csv(path: str, fieldnames: list[str], rows: list[dict]) -> None:
 
 
 def main() -> None:
+    PROC.mkdir(parents=True, exist_ok=True)
     snap = load_snapshot()
     hist = load_histories()
 

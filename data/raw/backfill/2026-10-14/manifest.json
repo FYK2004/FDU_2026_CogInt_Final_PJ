@@ -1,0 +1,11 @@
+{
+  "as_of": "2026-10-14",
+  "cutoff_utc_exclusive": "2026-10-15T04:00:00+00:00",
+  "retrieved_utc": "2026-10-27T13:37:16.669319+00:00",
+  "endpoint": "https://data-api.polymarket.com/v2/prices-history",
+  "bucket_seconds": 3600,
+  "price_kind": "historical price bucket, not bid/ask midpoint",
+  "request_start_epoch_seconds": 1791345600,
+  "request_end_epoch_seconds": 1792036800,
+  "historical_liquidity_available": false
+}

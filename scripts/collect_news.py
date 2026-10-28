@@ -20,9 +20,7 @@ import zlib
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import polymarket_client as pc  # noqa: E402  (re-used proxy opener + retry logic)
-
-RAW = "data/raw"
-PROC = "data/processed"
+from project_config import RAW, PROC, AS_OF, cutoff_utc
 
 QUERIES = {
     "anthropic_ipo": "Anthropic IPO",
@@ -68,7 +66,9 @@ def parse(xml_bytes: bytes) -> list[dict]:
         published = item.findtext("pubDate") or ""
         try:
             when = email.utils.parsedate_to_datetime(published)
-        except (TypeError, ValueError):
+            if when is not None and when.tzinfo is None:
+                when = when.replace(tzinfo=dt.timezone.utc)
+        except (TypeError, ValueError, OverflowError):
             when = None
         out.append(
             {
@@ -84,22 +84,30 @@ def parse(xml_bytes: bytes) -> list[dict]:
 
 def main() -> None:
     os.makedirs(PROC, exist_ok=True)
-    seen: dict[str, dict] = {}
+    seen = {}
+    existing = PROC / "news_index.csv"
+    if existing.exists():
+        with existing.open(encoding="utf-8") as fh:
+            seen = {r["link"]: r for r in csv.DictReader(fh)}
+    folder = RAW / "news" / AS_OF.isoformat()
+    folder.mkdir(parents=True, exist_ok=True)
     for name, query in QUERIES.items():
-        body = fetch_rss(query)
-        path = os.path.join(RAW, f"news_{name}.xml")
+        body = fetch_rss(query+f" before:{AS_OF+dt.timedelta(days=2)}")
+        path = folder / f"news_{name}.xml"
         with open(path, "wb") as fh:
             fh.write(body)
         items = parse(body)
         print(f"{name}: {len(items)} items -> {path}")
         for it in items:
             it["query"] = name
-            seen.setdefault(it["title"].lower(), it)
+            seen.setdefault(it["link"], it)
 
-    rows = sorted(seen.values(), key=lambda r: r["published_utc"], reverse=True)
+    rows = sorted((r for r in seen.values() if r["published_utc"] and
+                   dt.datetime.fromisoformat(r["published_utc"]) < cutoff_utc()),
+                  key=lambda r: r["published_utc"], reverse=True)
     out = os.path.join(PROC, "news_index.csv")
     with open(out, "w", newline="", encoding="utf-8") as fh:
-        w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+        w = csv.DictWriter(fh, fieldnames=["title", "publisher", "published_utc", "published_date", "link", "query"])
         w.writeheader()
         w.writerows(rows)
     print(f"wrote {out} ({len(rows)} unique headlines)")
